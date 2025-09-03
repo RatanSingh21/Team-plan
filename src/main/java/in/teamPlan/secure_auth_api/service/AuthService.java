@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class AuthService {
     @Autowired
@@ -19,6 +21,10 @@ public class AuthService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
 
     public TokenResponse login(String username, String password) {
         User user = userRepository.findByUsername(username)
