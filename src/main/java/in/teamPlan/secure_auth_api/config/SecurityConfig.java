@@ -29,6 +29,7 @@ public class SecurityConfig{
                         .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
+
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .exceptionHandling(exceptions -> exceptions
