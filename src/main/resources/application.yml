@@ -1,15 +1,9 @@
 resilience4j.ratelimiter.instances.loginLimiter.limitForPeriod: 5
-resilience4j.ratelimiter.instances.loginLimiter.limitRefreshPeriod: 10s
+resilience4j.ratelimiter.instances.loginLimiter.limitRefreshPeriod: 60s
 resilience4j.ratelimiter.instances.loginLimiter.timeoutDuration: 0
 
 
 resilience4j:
-  ratelimiter:
-    instances:
-      getAllUsersLimiter:
-        limitForPeriod: 5
-        limitRefreshPeriod: 10s
-        timeoutDuration: 1s
   circuitbreaker:
     instances:
       getAllUsersCB:

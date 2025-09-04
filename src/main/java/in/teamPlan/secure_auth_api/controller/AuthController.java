@@ -19,6 +19,7 @@ import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import in.teamPlan.secure_auth_api.dto.UserSummaryDto;
 
 @RestController
 @RequestMapping("/auth")
@@ -28,6 +29,43 @@ public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     @Autowired
     private AuthService authService;
+
+    @GetMapping("/verify")
+    @RateLimiter(name = "authGetLimiter", fallbackMethod = "authGetRateLimitFallback")
+    @Operation(summary = "Validate JWT from header and return all users if valid")
+    public ResponseEntity<?> validateTokenAndFetchUsers(@RequestHeader(value = "X-Auth-Token", required = false) String token) {
+
+        System.out.println("Received token in verify endpoint: " + (token != null ? "Present" : "null"));
+
+        if (token == null || token.trim().isEmpty()) {
+            System.out.println("Token is null or empty");
+            ErrorResponse errorResponse = new ErrorResponse(401, "Unauthorized", "Missing or invalid token", "/verify");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+
+        try {
+            authService.validateAndDecodeToken(token.trim()); // Trim any whitespace
+            List<UserSummaryDto> users = authService.getAllUserSummaries();
+            System.out.println("Successfully validated token and returning " + users.size() + " users");
+            return ResponseEntity.ok(users);
+
+        } catch (CustomException ex) {
+            System.out.println("Token validation failed: " + ex.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse(401, "Unauthorized", ex.getMessage(), "/verify");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+
+        } catch (Exception ex) {
+            System.out.println("Unexpected error during token validation: " + ex.getMessage());
+            ex.printStackTrace();
+            ErrorResponse errorResponse = new ErrorResponse(500, "Internal Server Error", "Something went wrong on the server", "/verify");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    public ResponseEntity<ErrorResponse> authGetRateLimitFallback(String token, RequestNotPermitted ex) {
+        ErrorResponse errorResponse = new ErrorResponse(429, "Too Many Requests", "You have exceeded the rate limit. Please try again later.", "/verify");
+        return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+    }
 
 
     @RateLimiter(name = "loginLimiter", fallbackMethod = "loginRateLimitFallback")
@@ -49,6 +87,8 @@ public class AuthController {
         }
 
         TokenResponse response = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
+        // Print the access token to the console
+        System.out.println("Access Token: " + response.getAccessToken());
         logger.info("[AuthController] Login successful for username: {}", loginRequest.getUsername());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -113,22 +153,24 @@ public class AuthController {
         logger.info("[AuthController] Token refreshed successfully");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @GetMapping("/users")
-    @RateLimiter(name = "getAllUsersLimiter", fallbackMethod = "getAllUsersRateLimitFallback")
-    @CircuitBreaker(name = "getAllUsersCB", fallbackMethod = "getAllUsersCircuitBreakerFallback")
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = authService.getAllUsers();
-        return new ResponseEntity<>(users, HttpStatus.OK);
-    }
-    // Circuit breaker fallback
-    public ResponseEntity<ErrorResponse> getAllUsersCircuitBreakerFallback(Throwable ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.SERVICE_UNAVAILABLE.value(),
-                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
-                "Service is temporarily unavailable. Please try again later.",
-                "/auth/users"
-        );
-        return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
-    }
+
+
+//    @GetMapping("/users")
+//    @RateLimiter(name = "getAllUsersLimiter", fallbackMethod = "getAllUsersRateLimitFallback")
+//    @CircuitBreaker(name = "getAllUsersCB", fallbackMethod = "getAllUsersCircuitBreakerFallback")
+//    public ResponseEntity<List<User>> getAllUsers() {
+//        List<User> users = authService.getAllUsers();
+//        return new ResponseEntity<>(users, HttpStatus.OK);
+//    }
+//    // Circuit breaker fallback
+//    public ResponseEntity<ErrorResponse> getAllUsersCircuitBreakerFallback(Throwable ex) {
+//        ErrorResponse errorResponse = new ErrorResponse(
+//                HttpStatus.SERVICE_UNAVAILABLE.value(),
+//                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+//                "Service is temporarily unavailable. Please try again later.",
+//                "/auth/users"
+//        );
+//        return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
+//    }
 
 }

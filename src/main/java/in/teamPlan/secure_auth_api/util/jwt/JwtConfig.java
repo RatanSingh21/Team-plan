@@ -9,8 +9,8 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class JwtConfig {
-    private static final String SECRET_KEY = "yourSecretKeyHereMustBeLongEnoughForHS256Algorithm";
-    private static final long ACCESS_TOKEN_EXPIRATION = 15 * 60 * 1000; // 15 minutes
+    private static final String SECRET_KEY = "f69a4144dfe13ef6ccde8e54d6edb849";
+    private static final long ACCESS_TOKEN_EXPIRATION = 60* 60 * 1000; // 60 minutes
     private static final long REFRESH_TOKEN_EXPIRATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     @Bean
