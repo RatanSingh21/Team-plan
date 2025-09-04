@@ -17,9 +17,12 @@ import org.springframework.web.bind.annotation.*;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authentication Controller", description = "Endpoints for user authentication and management")
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
